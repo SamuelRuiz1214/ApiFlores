@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Página de Venta de Flores</title>
+    <link rel="stylesheet" href="../HTML/estilos.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Registro de flores</h1>
+        <div class="form-section">
+            <h2>Agregar Nueva Flor</h2>
+            <form id="flowerForm">
+                <label for="nombre">Nombre:</label>
+                <input type="text" id="nombre" name="nombre" required>
+                
+                <label for="color">Color:</label>
+                <input type="text" id="color" name="color" required>
+                
+                <label for="precio">Precio:</label>
+                <input type="number" id="precio" name="precio" required>
+                
+                <button type="submit">Agregar Flor</button>
+            </form>
+        </div>
+        <div class="list-section">
+            <h2>Lista de Flores</h2>
+            <ul id="flowerList"></ul>
+        </div>
+    </div>
+    
+    <script>
+        // Función para eliminar una flor
+        const deleteFlower = async (id) => {
+            const response = await fetch(`http://localhost/API/index.php?id=${id}`, {
+                method: 'delete'
+            });
+
+            if (response.ok) {
+                getFlowers();
+            }
+        };
+
+        // Función para editar una flor
+        const editFlower = async (id) => {
+            const nombre = prompt("Nuevo nombre:");
+            const color = prompt("Nuevo color:");
+            const precio = prompt("Nuevo precio:");
+
+            const response = await fetch(`http://localhost/API/index.php?id=${id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ nombre, color, precio })
+            });
+
+            if (response.ok) {
+                getFlowers();
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const flowerForm = document.getElementById('flowerForm');
+            const flowerList = document.getElementById('flowerList');
+
+            // Función para obtener la lista de flores
+            const getFlowers = async () => {
+                const response = await fetch('http://localhost/API/index.php');
+                const data = await response.json();
+                flowerList.innerHTML = '';
+                data.forEach(flor => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `
+                        ${flor.nombre} - ${flor.color} - $${flor.precio} 
+                        <button class="delete-btn" data-id="${flor.id}">Eliminar</button> 
+                        <button class="edit-btn" data-id="${flor.id}">Editar</button>
+                    `;
+                    flowerList.appendChild(li);
+                });
+
+                // Añadir controladores de eventos para los botones de eliminar y editar
+                document.querySelectorAll('.delete-btn').forEach(button => {
+                    button.addEventListener('click', () => {
+                        const id = button.getAttribute('data-id');
+                        deleteFlower(id);
+                    });
+                });
+
+                document.querySelectorAll('.edit-btn').forEach(button => {
+                    button.addEventListener('click', () => {
+                        const id = button.getAttribute('data-id');
+                        editFlower(id);
+                    });
+                });
+            };
+
+            // Función para agregar una nueva flor
+            flowerForm.addEventListener('submit', async (event) => {
+                event.preventDefault();
+                const nombre = document.getElementById('nombre').value;
+                const color = document.getElementById('color').value;
+                const precio = document.getElementById('precio').value;
+
+                const response = await fetch('http://localhost/API/index.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ nombre, color, precio })
+                });
+
+                if (response.ok) {
+                    getFlowers();
+                    flowerForm.reset();
+                }
+            });
+
+            // Obtener la lista de flores al cargar la página
+            getFlowers();
+        });
+    </script>
+</body>
+</html>
